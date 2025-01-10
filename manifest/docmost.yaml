@@ -1,0 +1,119 @@
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: docmost
+  namespace: docmost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: docmost
+  template:
+    metadata:
+      labels:
+        app: docmost
+    spec:
+      volumes:
+        - name: docmost-data
+          persistentVolumeClaim:
+            claimName: docmost-pvc
+      containers:
+        - name: docmost
+          env:
+            - name: APP_URL
+              value: 'https://neutron-docmost.apps.neutron-sno-gpu.neutron-it.fr'
+            - name: APP_SECRET
+              value: YOUR_APP_SECRET
+            - name: DATABASE_URL
+              value: 'postgresql://docmost:G7gH2Xf5TqLp9YcBmNk4VzW8Rv3JX6Q@db:5432/docmost?schema=public'
+            - name: REDIS_URL
+              value: 'redis://redis:6379'
+            - name: MAIL_DRIVER
+              value: smtp
+            - name: SMTP_HOST
+              value: aspmx.l.google.com
+            - name: SMTP_PORT
+              value: '25'
+            - name: SMTP_USERNAME
+              value: YOUR_SMTP_USERNAME
+            - name: MAIL_FROM_ADDRESS
+              value: YOUR_EMAIL_ADDRESS
+            - name: MAIL_FROM_NAME
+              value: florian.even
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: docmost-data
+              mountPath: /app/data/storage
+          image: 'docmost/docmost:latest'
+      securityContext:
+        runAsUser: 0
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: redis
+  namespace: docmost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      volumes:
+        - name: redis-data
+          persistentVolumeClaim:
+            claimName: redis-pvc
+      containers:
+        - name: redis
+          image: 'redis:7.2-alpine'
+          resources: {}
+          volumeMounts:
+            - name: redis-data
+              mountPath: /data
+      securityContext:
+        runAsUser: 0
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: db
+  namespace: docmost
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: db-pvc
+      containers:
+        - name: postgres
+          image: 'postgres:16-alpine'
+          env:
+            - name: POSTGRES_DB
+              value: docmost
+            - name: POSTGRES_USER
+              value: docmost
+            - name: POSTGRES_PASSWORD
+              value: G7gH2Xf5TqLp9YcBmNk4VzW8Rv3JX6Q
+          resources: {}
+          volumeMounts:
+            - name: db-data
+              mountPath: /var/lib/postgresql/data
+      securityContext:
+        runAsUser: 0
+

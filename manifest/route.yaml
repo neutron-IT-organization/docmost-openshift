@@ -1,0 +1,15 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: docmost-route
+  namespace: docmost
+spec:
+  path: /
+  to:
+    kind: Service
+    name: docmost
+    weight: 100
+  port:
+    targetPort: 3000
+  tls:
+    termination: edge
